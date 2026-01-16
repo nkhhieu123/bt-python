@@ -1,5 +1,4 @@
-class Expr:
-    pass
+class Expr: pass
 
 class Var(Expr):
     def __init__(self, name):
@@ -32,6 +31,83 @@ class Implies(Expr):
 class Iff(Expr):
     def __init__(self, a, b):
         self.a, self.b = a, b
+
+def tokenize(s):
+    tokens = []
+    i = 0
+    while i < len(s):
+        if s[i].isspace():
+            i += 1
+        elif s[i:i+3] == "<->":
+            tokens.append("<->")
+            i += 3
+        elif s[i:i+2] == "->":
+            tokens.append("->")
+            i += 2
+        elif s[i] in "()~&|":
+            tokens.append(s[i])
+            i += 1
+        else:
+            tokens.append(s[i])
+            i += 1
+    return tokens
+
+class Parser:
+    def __init__(self, tokens):
+        self.tokens = tokens
+        self.i = 0
+
+    def peek(self):
+        return self.tokens[self.i] if self.i < len(self.tokens) else None
+
+    def eat(self, t=None):
+        tok = self.peek()
+        if t and tok != t:
+            raise SyntaxError(f"Expected {t}, got {tok}")
+        self.i += 1
+        return tok
+
+    def parse(self):
+        return self.iff()
+
+    def iff(self):
+        e = self.implies()
+        while self.peek() == "<->":
+            self.eat("<->")
+            e = Iff(e, self.implies())
+        return e
+
+    def implies(self):
+        e = self.or_expr()
+        while self.peek() == "->":
+            self.eat("->")
+            e = Implies(e, self.or_expr())
+        return e
+
+    def or_expr(self):
+        e = self.and_expr()
+        while self.peek() == "|":
+            self.eat("|")
+            e = Or(e, self.and_expr())
+        return e
+
+    def and_expr(self):
+        e = self.not_expr()
+        while self.peek() == "&":
+            self.eat("&")
+            e = And(e, self.not_expr())
+        return e
+
+    def not_expr(self):
+        if self.peek() == "~":
+            self.eat("~")
+            return Not(self.not_expr())
+        if self.peek() == "(":
+            self.eat("(")
+            e = self.parse()
+            self.eat(")")
+            return e
+        return Var(self.eat())
 
 def eliminate_implications(e):
     if isinstance(e, Var):
@@ -87,3 +163,17 @@ def to_cnf(expr):
     expr = push_negation(expr)
     expr = distribute(expr)
     return expr
+
+if __name__ == "__main__":
+
+    s = "(A -> B) & ~(C | D)"
+
+    print("Công thức ban đầu:")
+    print(s)
+
+    tokens = tokenize(s)
+    ast = Parser(tokens).parse()
+    cnf = to_cnf(ast)
+
+    print("\nDạng CNF:")
+    print(cnf)
