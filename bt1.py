@@ -166,14 +166,14 @@ def to_cnf(expr):
 
 if __name__ == "__main__":
 
-    s = "(A -> B) & ~(C | D)"
+    formula_fixed = "(A -> B) & ~(C | D)"
+    print("Công thức có sẵn:")
+    print(formula_fixed)
+    print("CNF:", solve(formula_fixed))
 
-    print("Công thức ban đầu:")
-    print(s)
+    print("\n" + "-"*40 + "\n")
 
-    tokens = tokenize(s)
-    ast = Parser(tokens).parse()
-    cnf = to_cnf(ast)
-
-    print("\nDạng CNF:")
+    formula_input = input("Nhập công thức logic: ")
+    print("CNF:", solve(formula_input))
     print(cnf)
+
